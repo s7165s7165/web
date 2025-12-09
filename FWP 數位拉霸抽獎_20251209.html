@@ -2,11 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FWP 數位拉霸抽獎</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* FWP 品牌色系 */
+        /* --- 基礎設定 --- */
         :root {
             --fw-blue-light: #1DADE5;
             --fw-blue-med: #007CC2;
@@ -15,7 +15,10 @@
             --fw-teal-dark: #008487;
             --bg-gray: #f4f6f8;
             --text-color: #333;
+            --header-height: 70px;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             font-family: 'Helvetica Neue', Arial, 'Microsoft JhengHei', sans-serif;
@@ -23,164 +26,161 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh;
             color: var(--text-color);
-            overflow: hidden;
+            /* 手機版預設自然高度，PC版再鎖定 */
+            min-height: 100vh;
+            min-height: 100dvh; 
         }
 
-        /* 頂部 Header */
+        /* --- Header --- */
         header {
-            background: linear-gradient(90deg, var(--bg-gray) 20%, var(--fw-teal-light) 50%, var(--fw-blue-light) 67%, var(--fw-blue-med) 83%, var(--fw-blue-dark) 100%);
+            background: linear-gradient(90deg, var(--bg-gray) 0%, var(--fw-teal-light) 40%, var(--fw-blue-light) 60%, var(--fw-blue-dark) 100%);
             color: white;
-            padding: 15px 30px;
+            height: var(--header-height);
+            padding: 0 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 10;
+            z-index: 100;
+            flex-shrink: 0;
         }
-        header h1 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: 1px; }
 
-        /* 主佈局 */
+        /* --- 主容器 (預設為手機/平板流動佈局) --- */
         .container {
             display: flex;
-            flex: 1;
-            padding: 20px;
+            flex-direction: column; /* 預設垂直排列 */
+            padding: 15px;
             gap: 20px;
-            overflow: hidden;
-            position: relative;
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
+        /* 通用面板樣式 */
         .panel {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             padding: 20px;
             display: flex;
             flex-direction: column;
-            border-top: 5px solid var(--fw-blue-med);
         }
 
         h2 {
             color: var(--fw-blue-dark);
             margin: 0 0 15px 0;
-            font-size: 18px;
-            border-bottom: 1px solid #eee;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #f0f0f0;
             padding-bottom: 10px;
+            font-weight: 600;
         }
 
-        /* 左側：設定區 */
-        .left-panel { width: 25%; min-width: 250px; z-index: 20; }
+        /* --- 左側：設定區 --- */
+        .left-panel { order: 2; } /* 手機版放在拉霸機下面 */
+        
         textarea {
             flex: 1;
             padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
             resize: none;
             font-size: 14px;
             margin-bottom: 15px;
             outline: none;
+            min-height: 150px; /* 手機版最小高度 */
+            width: 100%;
         }
-        textarea:focus { border-color: var(--fw-blue-med); }
-        
+        textarea:focus { border-color: var(--fw-blue-med); box-shadow: 0 0 0 2px rgba(29, 173, 229, 0.2); }
+
         button {
             padding: 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             transition: all 0.2s;
+            touch-action: manipulation; /* 優化觸控 */
         }
-        .btn-import { background-color: var(--fw-teal-light); color: white; }
+        .btn-import { background-color: var(--fw-teal-light); color: white; width: 100%; }
         .btn-import:hover { background-color: var(--fw-teal-dark); }
+        .btn-import:active { transform: scale(0.98); }
 
-        /* 中間：拉霸機 */
+        /* --- 中間：拉霸機 --- */
         .center-panel {
-            flex: 1;
+            order: 1; /* 手機版最優先顯示 */
+            border-top: 5px solid var(--fw-teal-light);
             align-items: center;
             justify-content: center;
-            background: #fff;
-            border-top: 5px solid var(--fw-teal-light);
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            padding: 30px 20px;
         }
 
-        /* 拉霸機外殼 */
         .slot-machine-frame {
             background: linear-gradient(135deg, var(--fw-blue-dark), var(--fw-blue-med));
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2), inset 0 0 10px rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2), inset 0 0 20px rgba(0,0,0,0.3);
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             text-align: center;
             margin-bottom: 30px;
             border: 4px solid #fff;
         }
 
-        /* 顯示名字的窗口 */
         .slot-window {
             background: #fff;
-            height: 120px;
-            border-radius: 8px;
+            height: 140px; /* 稍微加大高度 */
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             border: 2px solid #ccc;
         }
 
-        /* 滾動的名字文字 */
         .slot-text {
-            font-size: 48px;
-            font-weight: bold;
+            /* 響應式字體：最小24px，最大56px，依視窗寬度調整 */
+            font-size: clamp(24px, 6vw, 56px);
+            font-weight: 700;
             color: var(--text-color);
             white-space: nowrap;
-            /* 讓文字有點模糊效果，模擬快速轉動 */
-            filter: blur(0px); 
-            transition: transform 0.1s, filter 0.1s;
+            padding: 0 10px;
         }
         
-        /* 裝飾線：模擬螢幕反光 */
         .slot-window::after {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; height: 50%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0));
+            top: 0; left: 0; right: 0; height: 40%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0));
             pointer-events: none;
         }
 
         .btn-spin {
             background: linear-gradient(to bottom, #e74c3c, #c0392b);
             color: white;
-            font-size: 24px;
-            padding: 15px 80px;
+            font-size: 22px;
+            padding: 15px 0;
+            width: 80%; /* 手機版寬度 */
+            max-width: 250px;
             border-radius: 50px;
-            box-shadow: 0 6px 0 #962d22, 0 10px 10px rgba(0,0,0,0.3);
-            border: none;
-            letter-spacing: 2px;
+            box-shadow: 0 6px 0 #962d22, 0 10px 15px rgba(0,0,0,0.2);
             position: relative;
             top: 0;
-            transition: all 0.1s;
         }
-        .btn-spin:active {
-            top: 6px;
-            box-shadow: 0 0 0 #962d22, 0 0 0 rgba(0,0,0,0.3);
-        }
-        .btn-spin:disabled {
-            background: #95a5a6;
-            box-shadow: none;
-            cursor: not-allowed;
-            top: 6px;
-        }
+        .btn-spin:active { top: 6px; box-shadow: 0 0 0 #962d22, 0 0 0 rgba(0,0,0,0.2); }
+        .btn-spin:disabled { background: #95a5a6; box-shadow: none; top: 6px; cursor: not-allowed; }
 
-        /* 右側：中獎名單 */
-        .right-panel { width: 25%; min-width: 250px; border-top: 5px solid var(--fw-blue-dark); overflow: hidden; }
-        .winner-list-container { flex: 1; overflow-y: auto; }
+        /* --- 右側：中獎名單 --- */
+        .right-panel {
+            order: 3;
+            border-top: 5px solid var(--fw-blue-dark);
+            max-height: 500px; /* 手機版限制高度，內部滾動 */
+        }
+        .winner-list-container { flex: 1; overflow-y: auto; min-height: 150px; }
         .winner-list { list-style: none; padding: 0; margin: 0; }
         .winner-list li {
             background: #f8f9fa;
@@ -191,6 +191,7 @@
             justify-content: space-between;
             align-items: center;
             font-weight: 500;
+            font-size: 15px;
         }
         .winner-list li span.rank {
             background: var(--fw-blue-dark);
@@ -199,38 +200,77 @@
             border-radius: 50%;
             text-align: center;
             line-height: 24px; font-size: 12px;
+            flex-shrink: 0;
+            margin-right: 10px;
         }
 
-        /* 彈窗 */
+        /* --- 彈窗 Modal --- */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 77, 160, 0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 77, 160, 0.8);
+            backdrop-filter: blur(5px);
             justify-content: center; align-items: center; z-index: 2000;
+            padding: 20px;
         }
         .modal-content {
-            background: white; padding: 50px; border-radius: 12px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-width: 450px; width: 90%;
+            background: white; padding: 40px 30px; border-radius: 16px; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4); 
+            width: 100%; max-width: 400px;
             border-top: 8px solid var(--fw-blue-med);
             animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal h2 { color: var(--fw-teal-light); font-size: 28px; border: none; margin-bottom: 10px; }
-        .modal p { font-size: 42px; font-weight: bold; color: var(--fw-blue-dark); margin: 20px 0 40px 0; }
-        .modal button { background-color: var(--fw-blue-med); color: white; width: 100%; padding: 15px; font-size: 18px; border:none; border-radius:4px; cursor:pointer;}
+        .modal h2 { color: var(--fw-teal-light); font-size: 1.8rem; border: none; margin-bottom: 10px; }
+        .modal p { 
+            font-size: clamp(2rem, 8vw, 2.5rem); 
+            font-weight: bold; color: var(--fw-blue-dark); margin: 20px 0 40px 0; word-break: break-all; 
+        }
+        .modal button { background-color: var(--fw-blue-med); color: white; width: 100%; padding: 15px; font-size: 18px; border-radius: 8px;}
 
-        /* 響應式 */
-        @media (max-width: 900px) {
-            .container { flex-direction: column; height: auto; overflow-y: auto; }
-            .left-panel, .center-panel, .right-panel { width: 100%; height: auto; min-height: 300px;}
+        /* --- PC (Desktop) 專用樣式 --- */
+        @media (min-width: 1024px) {
+            body {
+                height: 100vh; /* PC 鎖定高度 */
+                overflow: hidden;
+            }
+            .container {
+                flex-direction: row; /* 水平排列 */
+                height: calc(100vh - var(--header-height));
+                overflow: hidden;
+            }
+            
+            .panel { height: 100%; border-top: 5px solid var(--fw-blue-med); }
+            .center-panel { border-top: 5px solid var(--fw-teal-light); }
+            .right-panel { border-top: 5px solid var(--fw-blue-dark); max-height: none; }
+            
+            .left-panel { width: 25%; min-width: 280px; order: 1; }
+            .center-panel { flex: 1; order: 2; }
+            .right-panel { width: 25%; min-width: 280px; order: 3; }
+            
+            textarea { margin-bottom: 20px; }
+        }
+
+        /* --- 平板 (Tablet) 調整 --- */
+        @media (min-width: 600px) and (max-width: 1023px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 20px;
+            }
+            .center-panel { grid-column: 1 / -1; order: 1; } /* 拉霸機佔滿上方 */
+            .left-panel { order: 2; height: 500px; }
+            .right-panel { order: 3; height: 500px; max-height: 500px; }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://www.fwp.com.tw/_next/image?url=%2Fimages%2Flogo2.png&w=384&q=75" alt="FWP Logo" style="height: 40px;">
-    <span style="font-size: 24px; opacity: 0.8;">Empowering a Greener Future</span>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <img src="https://www.fwp.com.tw/_next/image?url=%2Fimages%2Flogo2.png&w=384&q=75" alt="FWP Logo" style="height: 35px; width: auto;">
+    </div>
+    <span style="font-size: 16px; opacity: 0.9; font-weight: 300; display: none; margin-left: auto; @media(min-width:768px){display:inline;}">Empowering a Greener Future</span>
 </header>
 
 <div class="container">
@@ -238,8 +278,9 @@
         <h2>人員名單設置</h2>
         <textarea id="participants" placeholder="請在此輸入名單...&#10;王小明&#10;Alice&#10;Bob&#10;陳大文"></textarea>
         <button class="btn-import" onclick="importNames()">匯入名單並重置</button>
-        <div style="margin-top: 10px; text-align: right; color: #888; font-size: 13px;">
-            待抽人數: <span id="count" style="color: var(--fw-blue-med); font-weight: bold;">0</span>
+        <div style="margin-top: 15px; text-align: right; color: #666; font-size: 14px; display: flex; justify-content: space-between;">
+            <span>狀態</span>
+            <span>待抽人數: <span id="count" style="color: var(--fw-blue-med); font-weight: bold; font-size: 1.2em;">0</span></span>
         </div>
     </div>
 
@@ -249,16 +290,18 @@
                 <div id="slotText" class="slot-text">準備抽獎</div>
             </div>
         </div>
-        <button id="spinBtn" class="btn-spin" onclick="startSpin()" disabled>開始</button>
-        <p style="margin-top:10px; color:#888; font-size:14px;">點擊按鈕隨機抽出一位幸運兒</p>
+        <button id="spinBtn" class="btn-spin" onclick="startSpin()" disabled>開始抽獎</button>
+        <p style="margin-top:20px; color:#888; font-size:14px;">點擊按鈕隨機抽出一位幸運兒</p>
     </div>
 
     <div class="panel right-panel">
-        <h2>中獎名單</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 10px;">
+            <h2 style="border:none; margin:0; padding:0;">中獎名單</h2>
+            <button onclick="clearWinners()" style="background:transparent; border: 1px solid #ccc; color:#666; padding: 5px 10px; font-size:12px; border-radius: 4px;">清空</button>
+        </div>
         <div class="winner-list-container">
             <ul id="winnerList" class="winner-list"></ul>
         </div>
-        <button onclick="clearWinners()" style="background:#fff; border: 1px solid #ccc; color:#666; margin-top:15px; font-size:13px;">清空紀錄</button>
     </div>
 </div>
 
@@ -276,28 +319,32 @@
     let names = [];
     let isSpinning = false;
     let audioCtx = null;
-    let timer = null;
     let currentWinnerIndex = -1;
 
-    // 初始化
+    // 預設資料
+    const defaultData = "FP8888 郭守富\nSF0016 郝遐鵬\nSF0149 楊允仁\nSF0170 林憶汝\nSF0176 曾彥霖\nSF0190 楊佳縉\nSF0194 藍煒智\nFP0001 呂宗駿\nFP0002 許冠華\nFP0004 吳彥輝\nFP0005 林振芳\nFP0006 王慧敏\nFP0007 陳語柔\nFP0008 蔡金童\nFP0009 楊殿驊\nFP0011 劉家寧\nFP0012 潘曉杰\nFP0013 吳泰澄\nFP0014 林逸松\nFP0015 李佳蓁\nFP0016 鄭超元\nFP0018 林佑庭\nFP0020 陳書毓\nFP0022 柯湘琪\nFP0024 陳冠婷\nFP0026 呂昌隆\nFP0028 黃宏和\nFP0031 戴展祺\nFP0032 吳念倫\nFP0033 黃文青\nFP0034 陳映彤\nFP0035 葉家孜\nFP0036 薛閔聲\nFP0037 周昱辰\nFP0038 林宏臻\nFP0040 吳略溱\nFP0041 林如峰\nFP0042 廖尹瑄\nFP0043 鄭州廷\nFP0044 何玉珍\nFP0045 林書緯\nFP0046 李政憲\nFP0047 黃昭儒\nFP0048 江銘凱\nFP0049 鄭安驛\nFP0050 楊宜芬\nFP0051 陳柏安\nFP0052 謝政鑑\nFP0054 沈昶佑\nFP0055 古詠瑭\nFP0058 倪子涵\nFP0059 游育昌\nFP0060 吳佳芸\nFP0061 黃煒翔\nFP0062 高國偉\nFP0063 陳鴻儀\nFW0005 洪繼開\nFP0064 陳衍暢\nFP0065 王一帆\nFP0066 王耀德\nFP0067 李健新\nFP0068 陳香菱\nFP0071 詹智鈞\nFP0073 李信均\nFP0074 陳涵芸\nFP0075 嚴霆\nFP0076 莊心瑜\nFP0077 饒運祥\nFP0079 吳若涵\nFP0080 魏意璇\nFP0081 江青龍";
+
     window.onload = function() {
-        document.getElementById("participants").value = "FP8888 郭守富\nSF0016 郝遐鵬\nSF0149 楊允仁\nSF0170 林憶汝\nSF0176 曾彥霖\nSF0190 楊佳縉\nSF0194 藍煒智\nFP0001 呂宗駿\nFP0002 許冠華\nFP0004 吳彥輝\nFP0005 林振芳\nFP0006 王慧敏\nFP0007 陳語柔\nFP0008 蔡金童\nFP0009 楊殿驊\nFP0011 劉家寧\nFP0012 潘曉杰\nFP0013 吳泰澄\nFP0014 林逸松\nFP0015 李佳蓁\nFP0016 鄭超元\nFP0018 林佑庭\nFP0020 陳書毓\nFP0022 柯湘琪\nFP0024 陳冠婷\nFP0026 呂昌隆\nFP0028 黃宏和\nFP0031 戴展祺\nFP0032 吳念倫\nFP0033 黃文青\nFP0034 陳映彤\nFP0035 葉家孜\nFP0036 薛閔聲\nFP0037 周昱辰\nFP0038 林宏臻\nFP0040 吳略溱\nFP0041 林如峰\nFP0042 廖尹瑄\nFP0043 鄭州廷\nFP0044 何玉珍\nFP0045 林書緯\nFP0046 李政憲\nFP0047 黃昭儒\nFP0048 江銘凱\nFP0049 鄭安驛\nFP0050 楊宜芬\nFP0051 陳柏安\nFP0052 謝政鑑\nFP0054 沈昶佑\nFP0055 古詠瑭\nFP0058 倪子涵\nFP0059 游育昌\nFP0060 吳佳芸\nFP0061 黃煒翔\nFP0062 高國偉\nFP0063 陳鴻儀\nFW0005 洪繼開\nFP0064 陳衍暢\nFP0065 王一帆\nFP0066 王耀德\nFP0067 李健新\nFP0068 陳香菱\nFP0071 詹智鈞\nFP0073 李信均\nFP0074 陳涵芸\nFP0075 嚴霆\nFP0076 莊心瑜\nFP0077 饒運祥\nFP0079 吳若涵\nFP0080 魏意璇\nFP0081 江青龍";
+        document.getElementById("participants").value = defaultData;
         importNames();
     };
 
+    // 解決 iOS Safari 音效需要在使用者互動後才能播放的問題
     function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
         if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    // 模擬機械滾動的短促音效
     function playTickSound(frequency = 600) {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine'; // Sine 波比較圓潤可愛
+        osc.type = 'sine';
         osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-        gain.gain.setValueAtTime(10.0, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime); // 降低一點音量
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -308,7 +355,7 @@
     function playWinSound() {
         const audio = document.getElementById("winAudio");
         audio.currentTime = 0;
-        audio.play().catch(e => console.log("音效被阻擋", e));
+        audio.play().catch(e => console.log("Auto-play blocked", e));
     }
 
     function importNames() {
@@ -318,58 +365,46 @@
         document.getElementById("count").innerText = names.length;
         document.getElementById("slotText").innerText = "準備抽獎";
         document.getElementById("slotText").style.color = "var(--text-color)";
-        
         document.getElementById("spinBtn").disabled = names.length === 0;
     }
 
     function startSpin() {
         if (isSpinning || names.length === 0) return;
-        initAudio();
+        initAudio(); // 確保音效環境啟動
         isSpinning = true;
         document.getElementById("spinBtn").disabled = true;
         document.getElementById("spinBtn").innerText = "抽獎中...";
         
         const slotText = document.getElementById("slotText");
-        
-        // 預先決定中獎者
         currentWinnerIndex = Math.floor(Math.random() * names.length);
         const winner = names[currentWinnerIndex];
 
-        // 動畫控制參數
-        let duration = 3000; // 總時長 3秒
+        let duration = 3000; 
         let startTime = null;
         let lastFrameTime = 0;
-        let speed = 50; // 初始速度 (ms/frame)
+        let speed = 50;
 
-        // 視覺模糊效果
-        slotText.style.filter = "blur(1px)";
+        slotText.style.filter = "blur(2px)"; // 手機上 blur 太重會卡，改小一點
         slotText.style.color = "var(--fw-blue-med)";
 
         function step(timestamp) {
             if (!startTime) startTime = timestamp;
             const progress = timestamp - startTime;
 
-            // 每隔 speed 毫秒更新一次畫面
             if (timestamp - lastFrameTime > speed) {
-                // 隨機顯示一個名字
                 const randomName = names[Math.floor(Math.random() * names.length)];
                 slotText.innerText = randomName;
-                
-                // 播放滾動音效
                 playTickSound(400 + Math.random() * 200); 
-
                 lastFrameTime = timestamp;
 
-                // 減速邏輯：時間過半後，速度變慢
                 if (progress > duration * 0.7) {
-                    speed += 10; // 越來越慢
+                    speed += 10;
                 }
             }
 
             if (progress < duration) {
                 requestAnimationFrame(step);
             } else {
-                // 停止，顯示最終得主
                 finishSpin(winner);
             }
         }
@@ -380,9 +415,9 @@
     function finishSpin(winnerName) {
         const slotText = document.getElementById("slotText");
         slotText.innerText = winnerName;
-        slotText.style.filter = "blur(0)"; // 清除模糊
-        slotText.style.color = "#e74c3c"; // 強調色
-        slotText.style.transform = "scale(1.2)"; // 放大效果
+        slotText.style.filter = "blur(0)";
+        slotText.style.color = "#e74c3c";
+        slotText.style.transform = "scale(1.1)";
         
         setTimeout(() => {
              slotText.style.transform = "scale(1)";
@@ -394,7 +429,8 @@
 
     function showWinnerModal(name) {
         document.getElementById("winnerName").innerText = name;
-        document.getElementById("congratsModal").style.display = "flex";
+        const modal = document.getElementById("congratsModal");
+        modal.style.display = "flex";
         playWinSound();
         fireConfetti();
     }
@@ -404,11 +440,13 @@
         (function frame() {
             confetti({
                 particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, zIndex: 2001,
-                colors: ['#007CC2', '#30B49F', '#1DADE5'] // FWP colors
+                colors: ['#007CC2', '#30B49F', '#1DADE5'],
+                disableForReducedMotion: true // 尊重使用者設定
             });
             confetti({
                 particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, zIndex: 2001,
-                colors: ['#007CC2', '#30B49F', '#1DADE5']
+                colors: ['#007CC2', '#30B49F', '#1DADE5'],
+                disableForReducedMotion: true
             });
             if (Date.now() < end) requestAnimationFrame(frame);
         }());
@@ -418,20 +456,18 @@
         const modal = document.getElementById("congratsModal");
         modal.style.display = "none";
         
-        // 加入名單並移除
         addWinnerToList(names[currentWinnerIndex]);
         names.splice(currentWinnerIndex, 1);
         document.getElementById("count").innerText = names.length;
         document.getElementById("slotText").style.color = "var(--text-color)";
         
-        // 停止音樂
         const audio = document.getElementById("winAudio");
         audio.pause();
         audio.currentTime = 0;
 
         if (names.length > 0) {
             document.getElementById("spinBtn").disabled = false;
-            document.getElementById("spinBtn").innerText = "開始";
+            document.getElementById("spinBtn").innerText = "開始抽獎";
             document.getElementById("slotText").innerText = "下一位...";
         } else {
             document.getElementById("spinBtn").innerText = "已結束";
@@ -446,12 +482,14 @@
         const count = list.children.length + 1;
         li.innerHTML = `<span class="rank">${count}</span> <span>${name}</span>`;
         list.appendChild(li);
+        
+        // 自動捲動到最新中獎者
         const container = document.querySelector('.winner-list-container');
         container.scrollTop = container.scrollHeight;
     }
 
     function clearWinners() {
-        if(confirm("確定清空？")) document.getElementById("winnerList").innerHTML = "";
+        if(confirm("確定清空中獎紀錄？")) document.getElementById("winnerList").innerHTML = "";
     }
 </script>
 
