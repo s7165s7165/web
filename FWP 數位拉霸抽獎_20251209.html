@@ -344,7 +344,7 @@
         const gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime); // 降低一點音量
+        gain.gain.setValueAtTime(10.0, audioCtx.currentTime); // 降低一點音量
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
